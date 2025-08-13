@@ -1,0 +1,421 @@
+<html>
+	<head></head>
+	<body>
+		<style>
+			:root {
+				--tilesize: calc((min(100vw, 100vh) - 200px) / 4);
+				--background: #333;
+				--game-background: #ddd;
+				
+				--tile-2:      #6df9;
+				--tile-4:      #5be9;
+				--tile-8:      #39b9;
+				--tile-16:     #2789;
+				--tile-32:     #2829;
+				--tile-64:     #3a59;
+				--tile-128:    #ac09;
+				--tile-256:    #db09;
+				--tile-512:    #d609;
+				--tile-1024:   #e409;
+				--tile-2048:   #e009;
+				--tile-4096:   #b009;
+				--tile-8192:   #9009;
+				--tile-16384:  #7009;
+				--tile-32768:  #5009;
+				--tile-65536:  #2009;
+				--tile-131072: #0009;
+				
+				color: var(--game-background);
+			}
+			
+			body {
+				display: flex;
+				flex-direction: column;
+				margin: 0;
+				overflow: hidden;
+				background-color: var(--background);
+			}
+		
+			.start-dialog-container {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				position: absolute;
+				height: 100vh;
+				width: 100vw;
+				background-color: #000a;
+			}
+		
+			.start-dialog {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				height: 5em;
+				width: 15em;
+				background: var(--game-background);
+				border: 5px solid #ccc;
+			}
+			
+			.start-dialog > input {
+				font-size: 3em;
+			}
+			
+			.game-header,
+			.gamebox,
+			.gamebox-row,
+			.gamebox-tile {
+				display: flex;
+			}
+			
+			.game-header {
+				width: calc(var(--tilesize) * 4 + 8px);
+				height: 150px;
+			}
+			
+			.score {
+				display: flex;
+				justify-content: center;
+				width: 100%;
+			}
+			
+			.score-number,
+			.score-label {
+				font-size: 4em;
+				display: flex;
+				align-items: center;
+				width: 50%;
+			}
+			
+			.score-number {
+				justify-content: flex-end;
+				margin-right: 1em;
+			}
+			
+			.gamebox {
+				flex-direction: column;
+				user-select: none;
+				-webkit-user-select: none; /* Safari */
+				-moz-user-select: none;    /* Firefox */
+				-ms-user-select: none;     /* IE/Edge */
+			}
+			
+			.gamebox-row {
+			}
+			
+			.gamebox-tile {
+				background: var(--game-background);
+				border: 1px solid black;
+				width: var(--tilesize);
+				height: var(--tilesize);
+			}
+			
+			.hidden {
+				display: none;
+			}
+			
+			.tile-filler {
+				position: absolute;
+				font-size: 4em;
+				display: flex;
+				height: var(--tilesize);
+				width: var(--tilesize);
+				border-radius: .5em;
+				justify-content: center;
+				align-items: center;
+				transition: top .25s, left .25s;
+			}
+		</style>
+		<div class="game-header" >
+			<div class="score" >
+				<div id="score-number" class="score-number" > 0 </div> <div class="score-label" > Punkte </div>
+			</div>
+		</div>
+		<div id="gamebox" class="gamebox" onmousedown="dragStart(event)" onmouseup="dragStop(event)" >
+			<div id="row-0" class="gamebox-row" >
+				<div row="0" col="0" class="gamebox-tile" ></div>
+				<div row="0" col="1" class="gamebox-tile" ></div>
+				<div row="0" col="2" class="gamebox-tile" ></div>
+				<div row="0" col="3" class="gamebox-tile" ></div>
+			</div>
+			<div id="row-1" class="gamebox-row" >
+				<div row="1" col="0" class="gamebox-tile" ></div>
+				<div row="1" col="1" class="gamebox-tile" ></div>
+				<div row="1" col="2" class="gamebox-tile" ></div>
+				<div row="1" col="3" class="gamebox-tile" ></div>
+			</div>
+			<div id="row-2" class="gamebox-row" >
+				<div row="2" col="0" class="gamebox-tile" ></div>
+				<div row="2" col="1" class="gamebox-tile" ></div>
+				<div row="2" col="2" class="gamebox-tile" ></div>
+				<div row="2" col="3" class="gamebox-tile" ></div>
+			</div>
+			<div id="row-3" class="gamebox-row" >
+				<div row="3" col="0" class="gamebox-tile" ></div>
+				<div row="3" col="1" class="gamebox-tile" ></div>
+				<div row="3" col="2" class="gamebox-tile" ></div>
+				<div row="3" col="3" class="gamebox-tile" ></div>
+			</div>
+		</div>
+		<div id="start-dialog-container" class="start-dialog-container" >
+			<div class="start-dialog" >
+				<input value="Start" type="button" OnClick="startGame()" />
+			</div>
+		</div>
+		<script>
+			let points = 0;
+			let boxes = [
+				[0, 0, 0, 0],
+				[0, 0, 0, 0],
+				[0, 0, 0, 0],
+				[0, 0, 0, 0]
+			];
+		
+			function startGame() {
+				document.getElementById("start-dialog-container").classList.add('hidden');
+				
+				createNew();
+				createNew();
+				createNew();
+				
+				printAllBoxesNew();
+			}
+			
+			function printAllBoxesNew() {
+				boxes.forEach((row, rowIndex) => {
+					row.forEach((boxValue, colIndex) => {
+						if(boxValue !== 0) {
+							let htmlTileRect = getTileRect(rowIndex, colIndex);
+							let tileChild = document.createElement("div");
+							tileChild.classList.add("tile-filler");
+							tileChild.innerHTML = boxValue;
+							tileChild.style.backgroundColor = "var(--tile-"+boxValue+")";
+							tileChild.style.top = htmlTileRect.top;
+							tileChild.style.left = htmlTileRect.left;
+							tileChild.setAttribute("col", colIndex);
+							tileChild.setAttribute("row", rowIndex);
+							document.getElementById("gamebox").appendChild(tileChild);
+						}
+					});
+				});
+			}
+			
+			function moveDown() {
+				for (let x = 0; x < 4; x++) {
+					const fusioned = [];
+					for (let y = 2; y >= 0; y--) {
+						if(boxes[y][x] !== 0) {
+							const currentValue = boxes[y][x];
+							let target = y + 1;
+							while(boxes[target][x] === 0 && target < 3) {
+								target++;
+							}
+							
+							if(!fusioned.includes(target) && boxes[target][x] === 0) {
+								boxes[target][x] = currentValue;
+								setNewPosition(y, x, target, x);
+							} else if(!fusioned.includes(target) && boxes[target][x] === currentValue) {
+								boxes[target][x] *= 2;
+								updatePoints(boxes[target][x]);
+								fusioned.push(target);
+								setNewPosition(y, x, target, x);
+							} else {
+								target--;
+								setNewPosition(y, x, target, x);
+								boxes[target][x] = currentValue;
+							}
+						}
+					}
+				}
+				
+				setTimeout(function (){
+					const oldFillers = document.querySelectorAll("div.tile-filler");
+					oldFillers.forEach((element) => element.remove());
+					createNew();
+					printAllBoxesNew();
+				}, 300);
+			}
+			
+			function moveUp() {
+				for (let x = 0; x < 4; x++) {
+					const fusioned = [];
+					for (let y = 1; y <= 3; y++) {
+						if(boxes[y][x] !== 0) {
+							const currentValue = boxes[y][x];
+							let target = y - 1;
+							while(boxes[target][x] === 0 && target > 0) {
+								target--;
+							}
+							
+							if(!fusioned.includes(target) && boxes[target][x] === 0) {
+								boxes[target][x] = currentValue;
+								setNewPosition(y, x, target, x);
+							} else if(!fusioned.includes(target) && boxes[target][x] === currentValue) {
+								boxes[target][x] *= 2;
+								updatePoints(boxes[target][x]);
+								fusioned.push(target);
+								setNewPosition(y, x, target, x);
+							} else {
+								target++;
+								setNewPosition(y, x, target, x);
+								boxes[target][x] = currentValue;
+							}
+						}
+					}
+				}
+				
+				setTimeout(function (){
+					const oldFillers = document.querySelectorAll("div.tile-filler");
+					oldFillers.forEach((element) => element.remove());
+					createNew();
+					printAllBoxesNew();
+				}, 300);
+			}
+			
+			function moveRight() {
+				for (let y = 0; y < 4; y++) {
+					const fusioned = [];
+					for (let x = 2; x >= 0; x--) {
+						if(boxes[y][x] !== 0) {
+							const currentValue = boxes[y][x];
+							let target = x + 1;
+							while(boxes[y][target] === 0 && target < 3) {
+								target++;
+							}
+							
+							if(!fusioned.includes(target) && boxes[y][target] === 0) {
+								boxes[y][target] = currentValue;
+								setNewPosition(y, x, y, target);
+							} else if(!fusioned.includes(target) && boxes[y][target] === currentValue) {
+								boxes[y][target] *= 2;
+								updatePoints(boxes[y][target]);
+								fusioned.push(target);
+								setNewPosition(y, x, y, target);
+							} else {
+								target--;
+								setNewPosition(y, x, y, target);
+								boxes[y][target] = currentValue;
+							}
+						}
+					}
+				}
+				
+				setTimeout(function (){
+					const oldFillers = document.querySelectorAll("div.tile-filler");
+					oldFillers.forEach((element) => element.remove());
+					createNew();
+					printAllBoxesNew();
+				}, 300);
+			}
+			
+			function moveLeft() {
+				for (let y = 0; y < 4; y++) {
+					const fusioned = [];
+					for (let x = 1; x <= 3; x++) {
+						if(boxes[y][x] !== 0) {
+							const currentValue = boxes[y][x];
+							let target = x - 1;
+							while(boxes[y][target] === 0 && target > 0) {
+								target--;
+							}
+							
+							if(!fusioned.includes(target) && boxes[y][target] === 0) {
+								boxes[y][target] = currentValue;
+								setNewPosition(y, x, y, target);
+							} else if(!fusioned.includes(target) && boxes[y][target] === currentValue) {
+								boxes[y][target] *= 2;
+								updatePoints(boxes[y][target]);
+								fusioned.push(target);
+								setNewPosition(y, x, y, target);
+							} else {
+								target++;
+								setNewPosition(y, x, y, target);
+								boxes[y][target] = currentValue;
+							}
+						}
+					}
+				}
+				
+				setTimeout(function (){
+					const oldFillers = document.querySelectorAll("div.tile-filler");
+					oldFillers.forEach((element) => element.remove());
+					createNew();
+					printAllBoxesNew();
+				}, 300);
+			}
+			
+			function createNew() {
+				let colIndex = Math.floor(Math.random() * 4);
+				let rowIndex = Math.floor(Math.random() * 4);
+				
+				while(boxes[rowIndex][colIndex] !== 0) {
+					colIndex = Math.floor(Math.random() * 4);
+					rowIndex = Math.floor(Math.random() * 4);
+				}
+				
+				boxes[rowIndex][colIndex] = Math.ceil(Math.random() * 2) * 2;
+			}
+			
+			function checkWin() {
+				
+			}
+			
+			function checkLoss() {
+				
+			}
+			
+			let screenX = 0;
+			let screenY = 0;
+			function dragStart(event) {
+				screenX = event.screenX;
+				screenY = event.screenY;
+			}
+			
+			function dragStop(event) {
+				let xShift = screenX - event.screenX;
+				let yShift = screenY - event.screenY;
+				
+				if((Math.abs(xShift) > 100 
+					|| Math.abs(yShift) > 100)) {
+					if(Math.abs(xShift) > Math.abs(yShift)) {
+						if(xShift > 0) {
+							moveLeft();
+						} else {
+							moveRight();
+						}
+					} else {
+						if(yShift > 0) {
+							moveUp();
+						} else {
+							moveDown();
+						}
+					}
+				}
+			}
+			
+			/*
+			* Helper methods
+			*/
+			function setNewPosition(y, x, targetY, targetX) {
+				boxes[y][x] = 0;
+				
+				const htmlTileRect = getTileRect(targetY, targetX);
+				document.querySelector("div.tile-filler[col=\"" + x + "\"][row=\"" + y + "\"]").style.top = htmlTileRect.top;
+				document.querySelector("div.tile-filler[col=\"" + x + "\"][row=\"" + y + "\"]").style.left = htmlTileRect.left;
+			}
+			
+			function getTileRect(y, x) {
+				return document.querySelector(
+					"div.gamebox-tile"
+				  + "[col=\"" + x + "\"]"
+				  + "[row=\"" + (y) + "\"]"
+				).getBoundingClientRect();
+			}
+			
+			function updatePoints(pointsToAdd) {
+				points += pointsToAdd;
+				document.getElementById("score-number").innerHTML = points;
+			}
+		</script>
+	</body>
+</html>
