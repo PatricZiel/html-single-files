@@ -1,0 +1,497 @@
+<html>
+	<head>
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+			
+			div.main-div {
+				display: flex;
+				flex-direction: column;
+				height: calc(100% - 2em);
+				background: #222;
+				padding: 1em;
+			}
+			
+			div.main-div > *:not(.overlaying-top):not(.overlaying-bottom) {
+				font-size: calc((100vw - 2em) / 52);
+			}
+			
+			.overlaying-top,
+			.overlaying-bottom {
+				position: absolute; 
+				width: calc(100% - 2em);
+				height: 1em;
+				background-color: #222;
+				z-index: 1;
+			}
+			
+			.overlaying-top {
+				top: 0;
+				border-bottom: 1px solid black;
+			}
+			
+			.overlaying-bottom {
+				bottom: 0;
+			}
+			
+			.overlay-note {
+				position: absolute; 
+				width: calc(1em - 2px); 
+				background-color: green; 
+				border-radius: .25em;
+			}
+			
+			.overlay-note.es {
+				width: .7em; 
+				background-color: green; 
+				margin-left: -.35em;
+			}
+			
+			.note-screen {
+				position: relative;
+				height: 100%;
+				
+				background: 
+					linear-gradient(to right, transparent calc(100% - 1px), black calc(100% - 1px)),
+					repeating-linear-gradient(
+						to right,
+						black 0px,
+						black 1px,   /* Liniendicke */
+						transparent 1px,
+						transparent calc((100% / 52))
+					);
+			}
+			
+			.piano-parent {
+				position: relative;
+			}
+			
+			.keys-parent {
+				display: flex;
+				flex-direction: row;
+			}
+			
+			.key {
+				width: 1em;
+				height: 5em;
+				background: #ddd;
+			}
+			
+			.key > div {
+				width: calc(100% - 2px);
+				height: 100%;
+				border: 1px solid black;
+			}
+			
+			.key.pressed > div {
+				background: #c9c;
+			}
+			
+			.key.black {
+				width: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			
+			.key.black:after {
+				z-index: 1;
+				content: "";
+				display: flex;
+				height: 3.5em;
+				width: .7em;
+				background-color: black;
+				left: -.35em;
+			}
+			
+			.key.black.pressed:after {
+				background: #969;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="main-div" onclick="togglePause()" >
+			<div class="overlaying-top" > </div>
+			<div id="note-screen" class="note-screen" >
+			</div>
+			<div id="piano-parent" class="piano-parent" >
+				<div id="keys-parent" class="keys-parent" >
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key black" ></div>
+					<div class="key" > <div></div> </div>
+					<div class="key" > <div></div> </div>
+				</div>
+			</div>
+			<div class="overlaying-bottom" > </div>
+		</div>
+		<dialog id="start-dialog" >
+			<form id="start-dialog-form" method="dialog"> 
+				<p>Bitte LilyPond-Noten-Datei eingeben</p>
+				<input id="start-dialog-lilypond-file-input" type="file" accept=".txt,.ly" required >
+				<p>Bitte LilyPond-Noten-Datei eingeben</p>
+				<input id="start-dialog-mp3-file-input" type="file" accept=".mp3, .ogg" multiple >
+			</form>
+		</dialog>
+		<script>
+			const noteScreen = document.getElementById("note-screen");
+			const defaultSpeed = 120; // how many quater notes get played per minute // todo: yet to implement correct speed
+			const activeNotes = new Map();
+			const startTimeMs = 5000;
+			let intervalTime = 10;
+			let timer = 0;
+			let speed = 120;
+			let offsetUp = 0;
+			let readKeys = "";
+			let paused = true;
+			let intervalId = null;
+			let notes = [];
+			
+			document.addEventListener('DOMContentLoaded', () => {
+				const startDialog = document.getElementById("start-dialog");
+				const startDialogForm = document.getElementById('start-dialog-form');
+				const startDialogLilyPondFileInput = document.getElementById('start-dialog-lilypond-file-input');
+				const startDialogMp3Input = document.getElementById('start-dialog-mp3-file-input');
+				
+				startDialog.showModal();
+				
+				startDialogLilyPondFileInput.addEventListener('change', () => {
+					if (startDialogLilyPondFileInput.files.length > 0) {
+					  startDialogForm.requestSubmit();
+					}
+				});
+				
+				startDialogForm.addEventListener('submit', async (event) => {
+					const lilyPondFile = startDialogLilyPondFileInput.files[0];
+					if(!lilyPondFile) {
+					  alert("Bitte eine Datei auswählen.");
+					  event.preventDefault();
+					  return;
+					}
+					
+					readKeys = await lilyPondFile.text();
+					
+					writeAllKeys();
+					
+					const mp3Files = startDialogMp3Input.files;
+					if(mp3Files.length > 0) {
+						const body = document.getElementsByTagName("body")[0];
+						Array.from(mp3Files).forEach((mp3File) => {
+							const audioElement = document.createElement("audio");
+							
+							audioElement.id = "audio-"+mp3File.name.split(".")[0];
+							audioElement.src = URL.createObjectURL(mp3File);
+							audioElement.preload = "auto";
+							
+							body.appendChild(audioElement);
+						});
+					}
+					
+					const keysParent = document.getElementById("keys-parent");
+					const noteScreen = document.getElementById("note-screen");
+					keysParent.getBoundingClientRect().top - noteScreen.getBoundingClientRect().top
+					
+					togglePause();
+				});
+			});
+			
+			function togglePause() {
+				paused = !paused;
+				intervalTime = 10/3*speed/defaultSpeed);
+				if(!paused) {
+					intervalId = setInterval(() => {
+						timer += intervalTime;
+						
+						document.querySelectorAll(".overlay-note").forEach(node => {
+							let currentTop = parseInt(node.style.top) || 0;
+							node.style.top = (currentTop + 1) + "px";
+						});
+						
+						notes.forEach(note => {
+							if (!note.played && timer >= note.startTimeMs) {
+								playNote(0, note.keyInformation);
+								note.played = true;  // Damit die Note nicht mehrfach abgespielt wird
+							}
+						});
+					}, intervalTime;
+					for (const audio of activeNotes.values()) {
+						if (audio) {
+							audio.play();
+						}
+					}
+				} else {
+					clearInterval(intervalId);
+					for (const audio of activeNotes.values()) {
+						if (audio) {
+							audio.pause();
+						}
+					}
+				}
+			}
+			
+			function writeAllKeys() {
+				const rightHand = readKeys.split("\\relative {")[1].split("}")[0].split("\r\n\t");
+				const rightHandKeys = rightHand.filter((row) => !row.startsWith("\\") && row !== "").join(" ");
+				
+				extractAndPrintKeyInformation(rightHandKeys.split(" "));
+			}
+			
+			function extractAndPrintKeyInformation(keys) {
+				lastOctave = 0;
+				lastKeyIndex = 0;
+				lastKeyDuration = 0;
+				
+				const keyInformations = keys
+					.filter((key) => key !== "|")
+					.map((key) => {
+						const keyInformation = new KeyInformation(lastOctave, lastKeyDuration);
+						keyInformation.readKey(key);
+						checkOctave(keyInformation, lastKeyIndex);
+
+						lastOctave = keyInformation.octave;
+						if(keyInformation.keyIndex !== undefined) {
+							lastKeyIndex = keyInformation.keyIndex;
+						}
+						lastKeyDuration = keyInformation.keyDuration;
+						
+						notes.push({
+							keyInformation: keyInformation,
+							startTimeMs: calculateStartTimeInMs(keyInformation),
+							played: false
+						});
+						
+						return keyInformation;
+					});
+					
+				keyInformations.forEach((keyInformation) => printNote(keyInformation));
+			}
+			
+			function calculateStartTimeInMs(keyInformation) {
+			
+			}
+			
+			function printNote(keyInformation) {
+				offsetUp -= keyInformation.height;
+				
+				if(keyInformation.keyIndex === undefined) {
+					return;
+				}
+			
+				let noteToPrint = document.createElement("div");
+				
+				noteToPrint.classList.add("overlay-note");
+				if(keyInformation.gotES) {
+					noteToPrint.classList.add("es");
+				}
+				
+				noteToPrint.style.left = "calc("+ (23 + (keyInformation.octave*7) + keyInformation.keyIndex) +"em + 1px)";
+				noteToPrint.style.top = offsetUp + "px";
+				noteToPrint.style.height = keyInformation.height + "px";
+				
+				noteToPrint.keyInformation = keyInformation;
+				
+				noteScreen.appendChild(noteToPrint);
+			}
+				
+			function getKeyIndexByString(key) {
+				switch(key) {
+					case "c":
+						return 0;
+					case "d":
+						return 1;
+					case "e":
+						return 2;
+					case "f":
+						return 3;
+					case "g":
+						return 4;
+					case "a":
+						return 5;
+					case "b":
+						return 6;
+				}
+			}
+			
+			function checkOctave(keyInformation, lastKeyIndex) {
+				if((keyInformation.keyIndex - lastKeyIndex) >= 4) {
+					keyInformation.octave--;
+				} else if((lastKeyIndex - keyInformation.keyIndex) >= 4) {
+					keyInformation.octave++;
+				}
+			}
+			
+			function playNote(semitones, keyInformation) {
+				const audio = document.getElementById("audio-" + keyInformation.keyName).cloneNode();
+				audio.playbackRate = Math.pow(2, semitones / 12); // Tonhöhe
+				audio.play();
+
+				activeNotes.set(keyInformation.keyName, audio);
+	
+				setTimeout(() => {
+					audio.pause();
+					audio.currentTime = 0; // auf Anfang setzen, falls nochmal benutzt
+					activeNotes.delete(keyInformation.keyName);
+				}, 60000 / speed * keyInformation.keyDuration);
+			}
+			
+			class KeyInformation {
+				height = 0;
+				octave = 0;
+				gotES = false; // the key becomes minor
+				keyIndex = undefined; // 0 = c, 1 = d, 2 = e, 3 = f, 4 = g, 5 = a, 6 = b
+				keyName = "";
+				keyDuration = 1;
+				
+				constructor(octave, keyDuration) {
+					this.octave = octave;
+					this.keyDuration = keyDuration;
+					this.height = (600*defaultSpeed) / (keyDuration * speed);
+				}
+				
+				readKey(key) {
+					const fractionsReversed = key.split("").reverse();
+					let elongated = false;
+					
+					for(let i = 0; i < fractionsReversed.length; i++) {
+						if(!isNaN(fractionsReversed[i])) {
+							let lengthString = fractionsReversed[i];
+							while(!isNaN(fractionsReversed[i + 1])) {
+								i++;
+								lengthString += fractionsReversed[i];
+							}
+							this.height = (600*defaultSpeed) / (parseInt(lengthString) * speed);
+							this.keyDuration = parseInt(lengthString);
+						} else {
+							switch(fractionsReversed[i]) {
+								case "'":
+									this.octave++;
+								break;
+								case ",":
+									this.octave--;
+								break;
+								case ".":
+									elongated = true;
+								break;
+								case "s":
+									if(fractionsReversed[i + 1] === "e") {
+										i++;
+										this.gotES = true;
+									}
+								break;
+								case "a":
+								case "b":
+								case "c":
+								case "d":
+								case "e":
+								case "f":
+								case "g":
+									this.keyName = fractionsReversed[i];
+									this.keyIndex = getKeyIndexByString(fractionsReversed[i]);
+								break;
+							}
+						}
+					}
+					if(elongated) {
+						this.height *= 1.5;
+					}
+					if(this.octave !== 0) {
+						if(this.octave < 0) {
+							for(let i = 0; i > this.octave; i--) {
+								this.keyName += ",";
+							}
+						} else {
+							for(let i = 0; i < this.octave; i++) {
+								this.keyName += "'";
+							}
+						}
+					}
+				}
+			}
+		</script>
+	</body>
+</html>

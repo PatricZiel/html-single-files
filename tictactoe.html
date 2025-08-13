@@ -1,0 +1,358 @@
+<body>
+	<style>
+		body {
+			display: flex;
+			margin: 0;
+			overflow: hidden;
+			background-color: #eee;
+		}
+		
+		.start-dialog-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			position: absolute;
+			height: 100vh;
+			width: 100vw;
+			background-color: #000a;
+		}
+		
+		.start-dialog {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			height: 20em;
+			width: 60em;
+			background: white;
+			border: 5px solid #ccc;
+		}
+		
+		.start-dialog input {
+			font-size: 3em;
+		}
+		
+		.start-dialog label {
+			font-size: 2em;
+		}
+		
+		.start-dialog .names-div {
+			display: flex;
+			justify-content: center;
+			margin: 1em;
+			margin-top: 3em;
+			gap: 2em;
+		}
+		
+		.start-dialog .name-div {
+			display: flex;
+			flex-direction: column;
+			width: 40%;
+		}
+	
+		.start-dialog .name-div input {
+			width: 100%;
+		}
+		
+		.content {
+			display: flex;
+			align-items: center;
+		}
+	
+		.field {
+			border: 1px solid #555;
+			display: flex; 
+			width: 1em; 
+			height: 1em;
+			background-color: #f8f8f8;
+		}
+		
+		.field-p {
+			text-align: center; 
+			vertical-align: middle; 
+			width: 100%; 
+			margin: 0; 
+		}
+		
+		.board {
+			font-size: calc(100vh / 3.5);
+			display: inline-flex; 
+			flex-direction: column;
+			padding: .25em;
+			background-color: #ddd;
+		}
+		
+		.row {
+			display: flex;
+		}
+		
+		.player-area {
+			font-size: 4em;
+			display: inline-flex;
+			flex-direction: column;
+			gap: .5em;
+			width: 5em;
+			height: 80%;
+			margin: .5em;
+			padding: .25em;
+			border: 5px solid #888
+		}
+		
+		.player-first-area {
+			background-color: #e8e8f8;
+		}
+		
+		.player-first-area .name {
+			color: #224;
+		}
+		
+		.player-second-area {
+			background-color: #e8f8e8;
+		}
+		
+		.player-second-area .name {
+			color: #242;
+		}
+		
+		.hidden {
+			display: none;
+		}
+	</style>
+	
+	<div class="content" >
+		<div id="player-first-area-1" class="player-first-area player-area" >
+			<span>
+				<label>Name:</label>
+				<label class="name" name="first" ></label>	
+			</span>
+			<span>
+				<label>
+					Points:
+					<label name="first-points" >0</label>
+				</label>
+			</span>
+		</div>
+		<div id="player-second-area-2" class="player-second-area player-area hidden" >
+			<span>
+				<label>Name:</label>
+				<label class="name" name="second" ></label>	
+			</span>		
+			<span>
+				<label>
+					Points:
+					<label name="second-points" >0</label>
+				</label>
+			</span>	
+		</div>
+		<div id="ticTacToe" class="board" >
+			<div class="row" >
+			  <div class="field" >
+				<p id="field-1" class="field-p" ></p>
+			  </div>
+			  <div class="field" >
+				<p id="field-2" class="field-p" ></p>
+			  </div>
+			  <div class="field" >
+				<p id="field-3" class="field-p" ></p>
+			  </div>
+			</div>
+			<div class="row" >
+			  <div class="field" >
+				<p id="field-4" class="field-p" ></p>
+			  </div>
+			  <div class="field" >
+				<p id="field-5" class="field-p" ></p>
+			  </div>
+			  <div class="field" >
+				<p id="field-6" class="field-p" ></p>
+			  </div>
+			</div>
+			<div class="row" >
+			  <div class="field" >
+				<p id="field-7" class="field-p" ></p>
+			  </div>
+			  <div class="field" >
+				<p id="field-8" class="field-p" ></p>
+			  </div>
+			  <div class="field" >
+				<p id="field-9" class="field-p" ></p>
+			  </div>
+			</div>
+		</div>
+		<div id="player-second-area-1" class="player-second-area player-area" >
+			<span>
+				<label>Name:</label>
+				<label class="name" name="second" ></label>	
+			</span>		
+			<span>
+				<label>
+					Points:
+					<label name="second-points" >0</label>
+				</label>
+			</span>	
+		</div>
+		<div id="player-first-area-2" class="player-first-area player-area hidden" >
+			<span>
+				<label>Name:</label>
+				<label class="name" name="first" ></label>		
+			</span>
+			<span>
+				<label>
+					Points:
+					<label name="first-points" >0</label>
+				</label>
+			</span>
+		</div>
+	</div>
+	
+	<div id="start-dialog-container" class="start-dialog-container" >
+		<div class="start-dialog" >
+			<div class="names-div" >
+				<div class="name-div" >
+					<label>First player name:</label>
+					<input id="player-first-name" type="text" name="name" />
+				</div>
+				<div class="name-div" >
+					<label>Second player Name:</label>
+					<input id="player-second-name" type="text" name="name" />
+				</div>
+			</div>
+			<input value="Start" type="button" OnClick="startGame()" style="font-size: 3em;" />
+		</div>
+	</div>
+
+	<script>
+		const board = document.getElementById("ticTacToe");
+		const fields = getAllFields();
+		
+		const playerFirstSign = 'X';
+		const playerSecondSign = 'O';
+		
+		var round = 1;
+		var moveCounter = 0;
+		
+		var playerFirstPoints = 0;
+		var playerSecondPoints = 0;
+		
+		var playerSign = playerFirstSign;
+		
+		var winnerName = '';
+		
+		function startGame() {
+			document.getElementsByName("first").forEach(firstNameElement => {
+				firstNameElement.innerHTML = document.getElementById("player-first-name").value
+			});
+			document.getElementsByName("second").forEach(secondNameElement => {
+				secondNameElement.innerHTML = document.getElementById("player-second-name").value
+			});
+			document.getElementById("start-dialog-container").classList.add('hidden');
+			fields.forEach(field => {
+				field.addEventListener('click', fieldClick);
+			});
+		}
+		
+		function fieldClick(event) {
+			if(event.target.innerHTML == '') {
+				event.target.innerHTML = playerSign;
+				
+				// this timeout lets the ui update before an alert is thrown
+				setTimeout(function() { 
+					moveCounter++;
+					if (checkWinner()) {
+						startNextRound();
+					} else {
+						changePlayer();
+					}
+				}, 0);
+			}
+		}
+		
+		function changePlayer() {
+			if(playerSign == playerFirstSign) {
+				playerSign = playerSecondSign;
+			} else {
+				playerSign = playerFirstSign;
+			}
+		}
+		
+		function checkWinner() {
+			if(checkTripplets(0, 1, 2) 
+					|| checkTripplets(3, 4, 5)
+					|| checkTripplets(6, 7, 8)
+					|| checkTripplets(0, 3, 6)
+					|| checkTripplets(1, 4, 7)
+					|| checkTripplets(2, 5, 8)
+					|| checkTripplets(0, 4, 8)
+					|| checkTripplets(2, 4, 6)) {
+				alert(winnerName + ' won!');
+				return true;
+			} else if(moveCounter === 9) {
+				alert('Draw!');
+				return true;
+			}
+			return false;
+		}
+		
+		function checkTripplets(first, second, third) {
+			const hasWon = (fields[first].textContent.includes('X') 
+				|| fields[first].textContent.includes('O'))
+			&& fields[first].textContent === fields[second].textContent 
+			&& fields[first].textContent === fields[third].textContent;
+		
+			if(hasWon) {
+				const includesX = fields[first].textContent.includes('X');
+				if (includesX && round%2===1
+						|| !includesX && round%2===0) {
+					winnerName = document.getElementById("player-first-name").value;
+					playerFirstPoints++;
+				} else if (includesX && round%2===0
+						|| !includesX && round%2===1) {
+					winnerName = document.getElementById("player-second-name").value;
+					playerSecondPoints++;
+				}
+			}
+			
+			return hasWon;
+		}
+		
+		function startNextRound() {
+			playerSign = playerFirstSign;
+			moveCounter = 0;
+			round++;
+			
+			fields.forEach(field => {
+				field.getElementsByTagName('p')[0].innerHTML = '';
+			});
+			
+			swapPosition();
+			
+			document.getElementsByName("first-points").forEach(firstPointsElement => {
+				firstPointsElement.innerHTML = playerFirstPoints
+			});
+			
+			document.getElementsByName("second-points").forEach(secondPointsElement => {
+				secondPointsElement.innerHTML = playerSecondPoints
+			});
+		}
+		
+		function swapPosition() {
+			document.getElementById("player-first-area-1").classList.toggle('hidden');
+			document.getElementById("player-first-area-2").classList.toggle('hidden');
+			document.getElementById("player-second-area-1").classList.toggle('hidden');
+			document.getElementById("player-second-area-2").classList.toggle('hidden');
+		}
+		
+		function getAllFields() {
+			var fields = [];
+			
+			[].slice.call(board.children).every(row => {
+				[].slice.call(row.children).every(field => {
+					fields.push(field);
+					return true;
+				});
+				return true;
+			});
+			
+			return fields;
+		}
+	</script>
+</body>

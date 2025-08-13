@@ -1,0 +1,48 @@
+<html>
+	<style>
+		th {
+			width: 200px;
+			height: 200px;
+			border: 1px solid;
+		}
+	</style>
+	<table>
+		<tr>
+			<th onclick="cellClick(0)">
+			</th>
+			<th onclick="cellClick(1)">
+			</th>
+			<th onclick="cellClick(2)">
+			</th>
+		</tr>
+		<tr>
+			<th onclick="cellClick(3)">
+			</th>
+			<th onclick="cellClick(4)">
+			</th>
+			<th onclick="cellClick(5)">
+			
+			</th>
+		</tr>
+		<tr>
+			<th onclick="cellClick(6)">
+			</th>
+			<th onclick="cellClick(7)">
+			</th>
+			<th onclick="cellClick(8)">
+			</th>
+		</tr>
+	</table>
+	<script>
+		let firstPlayer = true;
+		
+		function cellClick(index) {
+			if(firstPlayer) {
+				document.querySelectorAll("th")[index].innerHTML = "X";
+			} else {
+				document.querySelectorAll("th")[index].innerHTML = "O";
+			}
+			firstPlayer = !firstPlayer;
+		}
+	</script>
+</html>
