@@ -109,6 +109,18 @@
 			.key.black.pressed:after {
 				background: #969;
 			}
+			
+			#start-dialog-form {
+				display: flex;
+				flex-direction: column;
+				gap: 1em;
+			}
+			
+			#start-dialog-form > div {
+				display: flex;
+				gap: 1em;
+				justify-content: space-between;
+			}
 		</style>
 	</head>
 	<body>
@@ -212,20 +224,26 @@
 		</div>
 		<dialog id="start-dialog" >
 			<form id="start-dialog-form" method="dialog"> 
-				<p>Bitte LilyPond-Noten-Datei eingeben</p>
-				<input id="start-dialog-lilypond-file-input" type="file" accept=".txt,.ly" required >
-				<p>Bitte LilyPond-Noten-Datei eingeben</p>
-				<input id="start-dialog-mp3-file-input" type="file" accept=".mp3, .ogg" multiple >
+				<div>
+					<label for="start-dialog-lilypond-file-input" > LilyPond Datei Format angeben: </label>
+					<input id="start-dialog-lilypond-file-input" name="start-dialog-lilypond-file-input" type="file" accept=".txt,.ly" required >
+				</div>
+				<div>
+					<label for="start-dialog-sound-file-input" > Sound Dateien angeben (optional): </label>
+					<input id="start-dialog-sound-file-input" name="start-dialog-sound-file-input" type="file" accept="audio/*" multiple >
+				</div>
+				<input id="start-dialog-submit-button" type="submit" value="Abspielen" disabled="true" >
 			</form>
 		</dialog>
 		<script>
 			const noteScreen = document.getElementById("note-screen");
 			const defaultSpeed = 120; // how many quater notes get played per minute // todo: yet to implement correct speed
 			const activeNotes = new Map();
-			const startTimeMs = 5000;
-			let intervalTime = 10;
+			const firstKeyStartTimeMs = 5000;
+			let pixelsPerMs = 300/1000;
+			let nextKeyStartTimeMs = firstKeyStartTimeMs;
 			let timer = 0;
-			let speed = 120;
+			let speed = defaultSpeed;
 			let offsetUp = 0;
 			let readKeys = "";
 			let paused = true;
@@ -236,13 +254,16 @@
 				const startDialog = document.getElementById("start-dialog");
 				const startDialogForm = document.getElementById('start-dialog-form');
 				const startDialogLilyPondFileInput = document.getElementById('start-dialog-lilypond-file-input');
-				const startDialogMp3Input = document.getElementById('start-dialog-mp3-file-input');
+				const startDialogSoundInput = document.getElementById('start-dialog-sound-file-input');
+				const startDialogSubmitButton = document.getElementById('start-dialog-submit-button');
 				
 				startDialog.showModal();
 				
 				startDialogLilyPondFileInput.addEventListener('change', () => {
 					if (startDialogLilyPondFileInput.files.length > 0) {
-					  startDialogForm.requestSubmit();
+					  startDialogSubmitButton.disabled = false;
+					} else {
+					  startDialogSubmitButton.disabled = true;
 					}
 				});
 				
@@ -256,41 +277,41 @@
 					
 					readKeys = await lilyPondFile.text();
 					
+					const keysParent = document.getElementById("keys-parent");
+					const noteScreen = document.getElementById("note-screen");
+					offsetUp = keysParent.getBoundingClientRect().top - noteScreen.getBoundingClientRect().top;
+					
 					writeAllKeys();
 					
-					const mp3Files = startDialogMp3Input.files;
-					if(mp3Files.length > 0) {
+					const soundFiles = startDialogSoundInput.files;
+					if(soundFiles.length > 0) {
 						const body = document.getElementsByTagName("body")[0];
-						Array.from(mp3Files).forEach((mp3File) => {
+						Array.from(soundFiles).forEach((soundFile) => {
 							const audioElement = document.createElement("audio");
 							
-							audioElement.id = "audio-"+mp3File.name.split(".")[0];
-							audioElement.src = URL.createObjectURL(mp3File);
+							audioElement.id = "audio-"+soundFile.name.split(".")[0];
+							audioElement.src = URL.createObjectURL(soundFile);
 							audioElement.preload = "auto";
 							
 							body.appendChild(audioElement);
 						});
 					}
 					
-					const keysParent = document.getElementById("keys-parent");
-					const noteScreen = document.getElementById("note-screen");
-					keysParent.getBoundingClientRect().top - noteScreen.getBoundingClientRect().top
-					
 					togglePause();
 				});
 			});
 			
 			function togglePause() {
+				let lastTime = performance.now();
 				paused = !paused;
-				intervalTime = 10/3*speed/defaultSpeed);
 				if(!paused) {
 					intervalId = setInterval(() => {
-						timer += intervalTime;
+						const now = performance.now();
+						const delta = now - lastTime
+						timer += delta;
+						lastTime = now;
 						
-						document.querySelectorAll(".overlay-note").forEach(node => {
-							let currentTop = parseInt(node.style.top) || 0;
-							node.style.top = (currentTop + 1) + "px";
-						});
+						moveNotes(delta);
 						
 						notes.forEach(note => {
 							if (!note.played && timer >= note.startTimeMs) {
@@ -298,7 +319,7 @@
 								note.played = true;  // Damit die Note nicht mehrfach abgespielt wird
 							}
 						});
-					}, intervalTime;
+					}, 1000 / 60); // 60fps
 					for (const audio of activeNotes.values()) {
 						if (audio) {
 							audio.play();
@@ -314,24 +335,32 @@
 				}
 			}
 			
-			function writeAllKeys() {
-				const rightHand = readKeys.split("\\relative {")[1].split("}")[0].split("\r\n\t");
-				const rightHandKeys = rightHand.filter((row) => !row.startsWith("\\") && row !== "").join(" ");
+			function moveNotes(delta) {
+				const now = timer;
+				document.querySelectorAll(".overlay-note").forEach(node => {
+					const note = notes.find(n => n.keyInformation === node.keyInformation);
+					if (!note) return;
+					const elapsed = now - note.startTimeMs;
+					node.style.top = (offsetUp + elapsed * pixelsPerMs - parseInt(node.style.height)) + "px";
+				});
+			}
+			
+			function writeAllKeys() {				
+				const rightHand = readKeys.split("\\relative {")[1]?.split("}")[0].split(/\r?\n/).map((line) => line.trim());
+				const rightHandKeys = rightHand.filter((line) => !line.startsWith("\\") && line !== "").join(" ");
 				
-				extractAndPrintKeyInformation(rightHandKeys.split(" "));
+				extractAndPrintKeyInformation(rightHandKeys.split(" ").filter((key) => key !== "|"));
 			}
 			
 			function extractAndPrintKeyInformation(keys) {
 				lastOctave = 0;
-				lastKeyIndex = 0;
+				lastKeyIndex = 3;
 				lastKeyDuration = 0;
 				
 				const keyInformations = keys
-					.filter((key) => key !== "|")
 					.map((key) => {
 						const keyInformation = new KeyInformation(lastOctave, lastKeyDuration);
-						keyInformation.readKey(key);
-						checkOctave(keyInformation, lastKeyIndex);
+						keyInformation.readKey(key, lastKeyIndex);
 
 						lastOctave = keyInformation.octave;
 						if(keyInformation.keyIndex !== undefined) {
@@ -352,12 +381,12 @@
 			}
 			
 			function calculateStartTimeInMs(keyInformation) {
-			
+				thisKeyStartTime = nextKeyStartTimeMs;
+				nextKeyStartTimeMs += 2000 / keyInformation.keyDuration;
+				return thisKeyStartTime;
 			}
 			
 			function printNote(keyInformation) {
-				offsetUp -= keyInformation.height;
-				
 				if(keyInformation.keyIndex === undefined) {
 					return;
 				}
@@ -369,9 +398,10 @@
 					noteToPrint.classList.add("es");
 				}
 				
-				noteToPrint.style.left = "calc("+ (23 + (keyInformation.octave*7) + keyInformation.keyIndex) +"em + 1px)";
-				noteToPrint.style.top = offsetUp + "px";
-				noteToPrint.style.height = keyInformation.height + "px";
+				noteToPrint.style.left = "calc("+ (16 + (keyInformation.octave*7) + keyInformation.keyIndex) +"em + 1px)";
+				noteToPrint.style.top =  "-10000px"; // render outside of view
+				
+				noteToPrint.style.height = pixelsPerMs * 2000 / keyInformation.keyDuration;
 				
 				noteToPrint.keyInformation = keyInformation;
 				
@@ -397,15 +427,10 @@
 				}
 			}
 			
-			function checkOctave(keyInformation, lastKeyIndex) {
-				if((keyInformation.keyIndex - lastKeyIndex) >= 4) {
-					keyInformation.octave--;
-				} else if((lastKeyIndex - keyInformation.keyIndex) >= 4) {
-					keyInformation.octave++;
-				}
-			}
-			
 			function playNote(semitones, keyInformation) {
+				if(!keyInformation.keyName) {
+					return;
+				}
 				const audio = document.getElementById("audio-" + keyInformation.keyName).cloneNode();
 				audio.playbackRate = Math.pow(2, semitones / 12); // Tonhöhe
 				audio.play();
@@ -424,16 +449,15 @@
 				octave = 0;
 				gotES = false; // the key becomes minor
 				keyIndex = undefined; // 0 = c, 1 = d, 2 = e, 3 = f, 4 = g, 5 = a, 6 = b
-				keyName = "";
+				keyName = undefined;
 				keyDuration = 1;
 				
 				constructor(octave, keyDuration) {
 					this.octave = octave;
 					this.keyDuration = keyDuration;
-					this.height = (600*defaultSpeed) / (keyDuration * speed);
 				}
 				
-				readKey(key) {
+				readKey(key, lastKeyIndex) {
 					const fractionsReversed = key.split("").reverse();
 					let elongated = false;
 					
@@ -444,7 +468,6 @@
 								i++;
 								lengthString += fractionsReversed[i];
 							}
-							this.height = (600*defaultSpeed) / (parseInt(lengthString) * speed);
 							this.keyDuration = parseInt(lengthString);
 						} else {
 							switch(fractionsReversed[i]) {
@@ -476,17 +499,34 @@
 							}
 						}
 					}
+					
+					
 					if(elongated) {
-						this.height *= 1.5;
+						this.keyDuration /= 1.5;
 					}
-					if(this.octave !== 0) {
-						if(this.octave < 0) {
-							for(let i = 0; i > this.octave; i--) {
-								this.keyName += ",";
-							}
-						} else {
-							for(let i = 0; i < this.octave; i++) {
-								this.keyName += "'";
+					
+					this.height = pixelsPerMs * 2000 / this.keyDuration;
+					
+					if((this.keyIndex - lastKeyIndex) >= 4) {
+						this.octave--;
+					} else if((lastKeyIndex - this.keyIndex) >= 4) {
+						this.octave++;
+					}
+					
+					if(this.keyName) {
+						if(this.gotES) {
+							this.keyName += "es";
+						}
+						
+						if(this.octave !== 0) {
+							if(this.octave < 0) {
+								for(let i = 0; i > this.octave; i--) {
+									this.keyName += ",";
+								}
+							} else {
+								for(let i = 0; i < this.octave; i++) {
+									this.keyName += "'";
+								}
 							}
 						}
 					}
