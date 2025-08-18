@@ -36,6 +36,26 @@
 				background-color: var(--background);
 			}
 		
+			.dialog-container {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				position: absolute;
+				height: 100vh;
+				width: 100vw;
+				background-color: #000a;
+			}
+		
+			.dialog {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				background: var(--game-background);
+				border: 5px solid #ccc;
+				color: #333;
+			}
+		
 			.start-dialog-container {
 				display: flex;
 				justify-content: center;
@@ -47,14 +67,25 @@
 			}
 		
 			.start-dialog {
-				display: flex;
-				flex-direction: column;
-				justify-content: center;
-				align-items: center;
 				height: 5em;
 				width: 15em;
-				background: var(--game-background);
-				border: 5px solid #ccc;
+			}
+			
+			.gameover-dialog {
+				height: 10em;
+				width: 30em;
+			}
+			
+			.gameover-dialog > div {
+				display: flex;
+			}
+			
+			.gameover-dialog-container:not(.won) .p-won {
+				display: none;
+			}
+			
+			.gameover-dialog-container.won .p-lost {
+				display: none;
 			}
 			
 			.start-dialog > input {
@@ -157,21 +188,42 @@
 				<div row="3" col="3" class="gamebox-tile" ></div>
 			</div>
 		</div>
-		<div id="start-dialog-container" class="start-dialog-container" >
-			<div class="start-dialog" >
+		<div id="start-dialog-container" class="start-dialog-container dialog-container" >
+			<div class="start-dialog dialog" >
 				<input value="Start" type="button" OnClick="startGame()" />
 			</div>
 		</div>
+		<div id="gameover-dialog-container" class="gameover-dialog-container dialog-container hidden" >
+			<div class="gameover-dialog dialog" >
+				<p class="p-won" > GEWONNEN 😀 </p>
+				<p class="p-lost" > VERLOREN 😞 </p>
+				<div> <div> Deine Punktzahl: </div> <div id="gameover-dialog-container-score-number">0</div> </div>
+				<input value="Start" type="button" OnClick="gameoverRestart()" />
+			</div>
+		</div>
 		<script>
-			let points = 0;
-			let boxes = [
-				[0, 0, 0, 0],
-				[0, 0, 0, 0],
-				[0, 0, 0, 0],
-				[0, 0, 0, 0]
-			];
+			let points;
+			let boxes;
+		
+			function gameoverRestart() {
+				document.getElementById("gameover-dialog-container").classList.add('hidden');
+				
+				if(document.getElementById("gameover-dialog-container").classList.contains('won')) {
+					document.getElementById("gameover-dialog-container").classList.remove('won');
+				}
+				
+				startGame();
+			}
 		
 			function startGame() {
+				points = 0;
+				boxes = [
+					[0, 0, 0, 0],
+					[0, 0, 0, 0],
+					[0, 0, 0, 0],
+					[0, 0, 0, 0]
+				];
+
 				document.getElementById("start-dialog-container").classList.add('hidden');
 				
 				createNew();
@@ -227,19 +279,12 @@
 						}
 					}
 				}
-				
-				setTimeout(function (){
-					const oldFillers = document.querySelectorAll("div.tile-filler");
-					oldFillers.forEach((element) => element.remove());
-					createNew();
-					printAllBoxesNew();
-				}, 300);
 			}
 			
 			function moveUp() {
 				for (let x = 0; x < 4; x++) {
 					const fusioned = [];
-					for (let y = 1; y <= 3; y++) {
+					for (let y = 1; y < 4; y++) {
 						if(boxes[y][x] !== 0) {
 							const currentValue = boxes[y][x];
 							let target = y - 1;
@@ -263,13 +308,6 @@
 						}
 					}
 				}
-				
-				setTimeout(function (){
-					const oldFillers = document.querySelectorAll("div.tile-filler");
-					oldFillers.forEach((element) => element.remove());
-					createNew();
-					printAllBoxesNew();
-				}, 300);
 			}
 			
 			function moveRight() {
@@ -299,19 +337,12 @@
 						}
 					}
 				}
-				
-				setTimeout(function (){
-					const oldFillers = document.querySelectorAll("div.tile-filler");
-					oldFillers.forEach((element) => element.remove());
-					createNew();
-					printAllBoxesNew();
-				}, 300);
 			}
 			
 			function moveLeft() {
 				for (let y = 0; y < 4; y++) {
 					const fusioned = [];
-					for (let x = 1; x <= 3; x++) {
+					for (let x = 1; x < 4; x++) {
 						if(boxes[y][x] !== 0) {
 							const currentValue = boxes[y][x];
 							let target = x - 1;
@@ -335,13 +366,6 @@
 						}
 					}
 				}
-				
-				setTimeout(function (){
-					const oldFillers = document.querySelectorAll("div.tile-filler");
-					oldFillers.forEach((element) => element.remove());
-					createNew();
-					printAllBoxesNew();
-				}, 300);
 			}
 			
 			function createNew() {
@@ -356,12 +380,34 @@
 				boxes[rowIndex][colIndex] = Math.ceil(Math.random() * 2) * 2;
 			}
 			
-			function checkWin() {
-				
+			function hasWon() {
+				boxes.forEach((row) => {
+					row.forEach((cell) => {
+						if(cell >= 2048) {
+							return true;
+						}
+					});
+				});
+				return false;
 			}
 			
-			function checkLoss() {
+			function isGameOver() {
+				if(boxes.some(inner => inner.includes(0))) {
+					return false;
+				}
 				
+				for(let y = 0; y < 4; y++) {
+					for (let x = 0; x < 4; x++) {
+						if(boxes[y - 1] && boxes[y - 1] === boxes[y][x]
+							|| boxes[y + 1] && boxes[y + 1] === boxes[y][x]
+							|| boxes[y][x - 1] && boxes[y][x - 1] === boxes[y][x]
+							|| boxes[y][x + 1] && boxes[y][x + 1] === boxes[y][x]) {
+							return false;
+						}
+					}
+				}
+				
+				return true;
 			}
 			
 			let screenX = 0;
@@ -377,6 +423,8 @@
 				
 				if((Math.abs(xShift) > 100 
 					|| Math.abs(yShift) > 100)) {
+					const boxesCopy = JSON.stringify(boxes);
+					
 					if(Math.abs(xShift) > Math.abs(yShift)) {
 						if(xShift > 0) {
 							moveLeft();
@@ -389,6 +437,24 @@
 						} else {
 							moveDown();
 						}
+					}
+					
+					if(boxesCopy !== JSON.stringify(boxes)) {
+						console.log("box has changed");
+						setTimeout(function (){
+							const oldFillers = document.querySelectorAll("div.tile-filler");
+							oldFillers.forEach((element) => element.remove());
+							createNew();
+							printAllBoxesNew();
+							
+							if(isGameOver()) {
+								document.getElementById("gameover-dialog-container").classList.remove('hidden');
+								document.getElementById("gameover-dialog-container-score-number").innerHTML = points;
+								if(hasWon()) {
+									document.getElementById("gameover-dialog-container").classList.add('won');
+								}
+							}
+						}, 300);
 					}
 				}
 			}
