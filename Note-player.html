@@ -276,7 +276,7 @@
 			let nextKeyStartTimeMs = firstKeyStartTimeMs;
 			let timer = 0;
 			let speed = defaultSpeed;
-			let offsetUp = 0;
+			let keysHeightOffset = 0;
 			let readKeys = "";
 			let paused = true;
 			let intervalId = null;
@@ -311,7 +311,7 @@
 					
 					const keysParent = document.getElementById("keys-parent");
 					const noteScreen = document.getElementById("note-screen");
-					offsetUp = keysParent.getBoundingClientRect().top - noteScreen.getBoundingClientRect().top;
+					keysHeightOffset = keysParent.getBoundingClientRect().top - noteScreen.getBoundingClientRect().top;
 					
 					writeAllKeys();
 					
@@ -339,11 +339,10 @@
 				if(!paused) {
 					intervalId = setInterval(() => {
 						const now = performance.now();
-						const delta = now - lastTime
-						timer += delta;
+						timer += now - lastTime;
 						lastTime = now;
 						
-						moveNotes(delta);
+						moveNotes();
 						
 						notes.forEach(note => {
 							if (!note.played && timer >= note.startTimeMs) {
@@ -367,14 +366,26 @@
 				}
 			}
 			
-			function moveNotes(delta) {
+			function moveNotes() {
 				const now = timer;
 				document.querySelectorAll(".overlay-note").forEach(node => {
 					const note = notes.find(n => n.keyInformation === node.keyInformation);
 					if (!note) return;
 					const elapsed = now - note.startTimeMs;
-					node.style.top = (offsetUp + elapsed * pixelsPerMs - parseInt(node.style.height)) + "px";
+					
+					const nodePosition = keysHeightOffset + elapsed * pixelsPerMs - parseInt(node.style.height);
+					
+					node.style.top = nodePosition + "px";
+					
+					const pianoKey = document.querySelector("[keyName="+ node.keyInformation.keyName +"]");
+					if(pianoKey.classList.contains("pressed") && elapsed * pixelsPerMs > parseInt(node.style.height)) {
+						pianoKey.classList.remove("pressed");
+					}
 				});
+			}
+			
+			function moveNote() {
+				
 			}
 			
 			function writeAllKeys() {				
@@ -481,10 +492,6 @@
 						activeNotes.delete(keyInformation.keyName);
 					}, 60000 / speed / keyInformation.keyDuration * 0.8);
 				}
-				
-				setTimeout(() => {
-					pianoKey.classList.remove("pressed");
-				}, 60000 / speed / keyInformation.keyDuration * 0.8);
 			}
 			
 			class KeyInformation {
