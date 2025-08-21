@@ -53,6 +53,7 @@
 			.note-screen {
 				position: relative;
 				height: 100%;
+				cursor: none;
 				
 				background:
 					/* Vignette-Effekt */
@@ -153,10 +154,19 @@
 				gap: 1em;
 				justify-content: space-between;
 			}
+			
+			video[src]:not([src=""]) {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh
+				height: 100vh
+			}
 		</style>
 	</head>
 	<body>
-		<div class="main-div" onclick="togglePause()" >
+		<div id="main-div" class="main-div" >
 			<div class="overlaying-top" > </div>
 			<div id="note-screen" class="note-screen" >
 			</div>
@@ -254,6 +264,7 @@
 			</div>
 			<div class="overlaying-bottom" > </div>
 		</div>
+		<video id="preview" controls></video>
 		<dialog id="start-dialog" >
 			<form id="start-dialog-form" method="dialog"> 
 				<div>
@@ -264,11 +275,16 @@
 					<label for="start-dialog-sound-file-input" > Sound Dateien angeben (optional): </label>
 					<input id="start-dialog-sound-file-input" name="start-dialog-sound-file-input" type="file" accept="audio/*" multiple >
 				</div>
+				<div>
+					<label for="start-dialog-video-checkbox-input" > Video erstellen: </label>
+					<input id="start-dialog-video-checkbox-input" name="start-dialog-video-checkbox-input" type="checkbox" checked >
+				</div>
 				<input id="start-dialog-submit-button" type="submit" value="Abspielen" disabled="true" >
 			</form>
 		</dialog>
 		<script>
 			const noteScreen = document.getElementById("note-screen");
+			const mainDiv = document.getElementById("main-div");
 			const defaultSpeed = 30; // how many quater notes get played per minute // todo: yet to implement correct speed
 			const activeNotes = new Map();
 			const firstKeyStartTimeMs = 5000;
@@ -282,12 +298,16 @@
 			let intervalId = null;
 			let notes = [];
 			
+			let mediaRecorder;
+			let videoChunks = [];
+			
 			document.addEventListener('DOMContentLoaded', () => {
 				const startDialog = document.getElementById("start-dialog");
 				const startDialogForm = document.getElementById('start-dialog-form');
 				const startDialogLilyPondFileInput = document.getElementById('start-dialog-lilypond-file-input');
 				const startDialogSoundInput = document.getElementById('start-dialog-sound-file-input');
 				const startDialogSubmitButton = document.getElementById('start-dialog-submit-button');
+				const startDialogVideoCheckbox = document.getElementById("start-dialog-video-checkbox-input");
 				
 				startDialog.showModal();
 				
@@ -329,9 +349,37 @@
 						});
 					}
 					
+					if(startDialogVideoCheckbox.checked) {
+						const stream = await navigator.mediaDevices.getDisplayMedia({
+							video: { frameRate: 30 },
+							audio: false
+						});
+						
+						console.log(MediaRecorder.isTypeSupported('video/webm'));
+
+						mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+
+						mediaRecorder.ondataavailable = e => videoChunks.push(e.data);
+						mediaRecorder.onstop = () => {
+							const blob = new Blob(videoChunks, { type: "video/webm" });
+							console.log(blob);
+							document.getElementById("preview").src = URL.createObjectURL(blob);
+							console.log(videoChunks);
+							videoChunks = [];
+						};
+
+						mediaRecorder.start();
+					}
+					
 					togglePause();
 				});
 			});
+			
+			mainDiv.onclick = () => {
+			  mediaRecorder.stop();
+			  
+			  togglePause();
+			};
 			
 			function togglePause() {
 				let lastTime = performance.now();
@@ -363,6 +411,10 @@
 							audio.pause();
 						}
 					}
+					if(mediaRecorder) {
+						console.log("stop mediaRecorder");
+						mediaRecorder.stop();
+					}
 				}
 			}
 			
@@ -382,10 +434,6 @@
 						pianoKey.classList.remove("pressed");
 					}
 				});
-			}
-			
-			function moveNote() {
-				
 			}
 			
 			function writeAllKeys() {				
