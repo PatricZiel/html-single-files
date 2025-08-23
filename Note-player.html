@@ -417,6 +417,26 @@
 				});
 			}
 			
+			function playNote(semitones, keyInformation) {
+				if(!keyInformation.keyName) {
+					return;
+				}
+				
+				const pianoKey = document.querySelector("[keyName="+ keyInformation.keyName +"]");
+				pianoKey.classList.add("pressed");
+				
+				const audioElement = document.getElementById("audio-" + keyInformation.keyName);
+				if(audioElement) {
+					const audio = audioElement.cloneNode();
+					audio.playbackRate = Math.pow(2, semitones / 12); // Tonhöhe
+					audio.play();
+		
+					setTimeout(() => {
+						audio.pause();
+					}, 240000 / speed / keyInformation.keyDuration * 0.9);
+				}
+			}
+			
 			function writeAllKeys() {				
 				const rightHand = readKeys.split("\\relative {")[1]?.split("}")[0].split(/\r?\n/).map((line) => line.trim());
 				const rightHandKeys = rightHand.filter((line) => !line.startsWith("\\") && line !== "").join(" ");
@@ -425,7 +445,7 @@
 			}
 			
 			function extractAndPrintKeyInformation(keys) {
-				lastOctave = 0;
+				lastOctave = -1;
 				lastKeyIndex = 3;
 				lastKeyDuration = 1;
 				
@@ -496,26 +516,6 @@
 						return 5;
 					case "b":
 						return 6;
-				}
-			}
-			
-			function playNote(semitones, keyInformation) {
-				if(!keyInformation.keyName) {
-					return;
-				}
-				
-				const pianoKey = document.querySelector("[keyName="+ keyInformation.keyName +"]");
-				pianoKey.classList.add("pressed");
-				
-				const audioElement = document.getElementById("audio-" + keyInformation.keyName);
-				if(audioElement) {
-					const audio = audioElement.cloneNode();
-					audio.playbackRate = Math.pow(2, semitones / 12); // Tonhöhe
-					audio.play();
-		
-					setTimeout(() => {
-						audio.pause();
-					}, 240000 / speed / keyInformation.keyDuration * 0.9);
 				}
 			}
 			
