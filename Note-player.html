@@ -285,8 +285,7 @@
 		<script>
 			const noteScreen = document.getElementById("note-screen");
 			const mainDiv = document.getElementById("main-div");
-			const defaultSpeed = 30; // how many quater notes get played per minute // todo: yet to implement correct speed
-			const activeNotes = new Map();
+			const defaultSpeed = 120; // how many quater notes get played per minute
 			const firstKeyStartTimeMs = 5000;
 			let pixelsPerMs = 300/1000;
 			let nextKeyStartTimeMs = firstKeyStartTimeMs;
@@ -294,7 +293,6 @@
 			let speed = defaultSpeed;
 			let keysHeightOffset = 0;
 			let readKeys = "";
-			let paused = true;
 			let intervalId = null;
 			let notes = [];
 			
@@ -355,66 +353,48 @@
 							audio: false
 						});
 						
-						console.log(MediaRecorder.isTypeSupported('video/webm'));
-
 						mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
 						mediaRecorder.ondataavailable = e => videoChunks.push(e.data);
 						mediaRecorder.onstop = () => {
 							const blob = new Blob(videoChunks, { type: "video/webm" });
-							console.log(blob);
 							document.getElementById("preview").src = URL.createObjectURL(blob);
-							console.log(videoChunks);
 							videoChunks = [];
 						};
 
 						mediaRecorder.start();
 					}
 					
-					togglePause();
+					start();
 				});
 			});
 			
 			mainDiv.onclick = () => {
-			  mediaRecorder.stop();
-			  
-			  togglePause();
+				stop();
 			};
 			
-			function togglePause() {
+			function start() {
 				let lastTime = performance.now();
-				paused = !paused;
-				if(!paused) {
-					intervalId = setInterval(() => {
-						const now = performance.now();
-						timer += now - lastTime;
-						lastTime = now;
-						
-						moveNotes();
-						
-						notes.forEach(note => {
-							if (!note.played && timer >= note.startTimeMs) {
-								playNote(0, note.keyInformation);
-								note.played = true;  // Damit die Note nicht mehrfach abgespielt wird
-							}
-						});
-					}, 1000 / 60); // 60fps
-					for (const audio of activeNotes.values()) {
-						if (audio) {
-							audio.play();
+				intervalId = setInterval(() => {
+					const now = performance.now();
+					timer += now - lastTime;
+					lastTime = now;
+					
+					moveNotes();
+					
+					notes.forEach(note => {
+						if (!note.played && timer >= note.startTimeMs) {
+							playNote(0, note.keyInformation);
+							note.played = true;
 						}
-					}
-				} else {
-					clearInterval(intervalId);
-					for (const audio of activeNotes.values()) {
-						if (audio) {
-							audio.pause();
-						}
-					}
-					if(mediaRecorder) {
-						console.log("stop mediaRecorder");
-						mediaRecorder.stop();
-					}
+					});
+				}, 1000 / 60); // 60fps
+			}
+			
+			function stop() {
+				clearInterval(intervalId);
+				if(mediaRecorder) {
+					mediaRecorder.stop();
 				}
 			}
 			
@@ -432,6 +412,7 @@
 					const pianoKey = document.querySelector("[keyName="+ node.keyInformation.keyName +"]");
 					if(pianoKey.classList.contains("pressed") && elapsed * pixelsPerMs > parseInt(node.style.height)) {
 						pianoKey.classList.remove("pressed");
+						node.remove();
 					}
 				});
 			}
@@ -446,7 +427,7 @@
 			function extractAndPrintKeyInformation(keys) {
 				lastOctave = 0;
 				lastKeyIndex = 3;
-				lastKeyDuration = 0;
+				lastKeyDuration = 1;
 				
 				const keyInformations = keys
 					.map((key) => {
@@ -473,7 +454,7 @@
 			
 			function calculateStartTimeInMs(keyInformation) {
 				thisKeyStartTime = nextKeyStartTimeMs;
-				nextKeyStartTimeMs += 2000 / keyInformation.keyDuration;
+				nextKeyStartTimeMs += 240000 / speed / keyInformation.keyDuration;
 				return thisKeyStartTime;
 			}
 			
@@ -492,7 +473,7 @@
 				noteToPrint.style.left = "calc("+ (23 + (keyInformation.octave*7) + keyInformation.keyIndex) +"em + 1px)";
 				noteToPrint.style.top =  "-10000px"; // render outside of view
 				
-				noteToPrint.style.height = pixelsPerMs * 2000 / keyInformation.keyDuration * 0.8;
+				noteToPrint.style.height = pixelsPerMs * 240000 / speed / keyInformation.keyDuration * 0.9;
 				
 				noteToPrint.keyInformation = keyInformation;
 				
@@ -531,19 +512,14 @@
 					const audio = audioElement.cloneNode();
 					audio.playbackRate = Math.pow(2, semitones / 12); // Tonhöhe
 					audio.play();
-
-					activeNotes.set(keyInformation.keyName, audio);
 		
 					setTimeout(() => {
 						audio.pause();
-						audio.currentTime = 0; // auf Anfang setzen, falls nochmal benutzt
-						activeNotes.delete(keyInformation.keyName);
-					}, 60000 / speed / keyInformation.keyDuration * 0.8);
+					}, 240000 / speed / keyInformation.keyDuration * 0.9);
 				}
 			}
 			
 			class KeyInformation {
-				height = 0;
 				octave = 0;
 				gotES = false; // the key becomes minor
 				keyIndex = undefined; // 0 = c, 1 = d, 2 = e, 3 = f, 4 = g, 5 = a, 6 = b
@@ -602,8 +578,6 @@
 					if(elongated) {
 						this.keyDuration /= 1.5;
 					}
-					
-					this.height = pixelsPerMs * 2000 / this.keyDuration;
 					
 					if((this.keyIndex - lastKeyIndex) >= 4) {
 						this.octave--;
