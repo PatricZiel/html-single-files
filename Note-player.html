@@ -338,8 +338,9 @@
 						const body = document.getElementsByTagName("body")[0];
 						Array.from(soundFiles).forEach((soundFile) => {
 							const audioElement = document.createElement("audio");
+							const keyName = getKeyBySoundfileName( soundFile.name.split(".")[0] );
 							
-							audioElement.id = "audio-"+soundFile.name.split(".")[0];
+							audioElement.id = "audio-" + keyName;
 							audioElement.src = URL.createObjectURL(soundFile);
 							audioElement.preload = "auto";
 							
@@ -506,6 +507,46 @@
 					case "b":
 						return 6;
 				}
+			}
+			
+			function getKeyBySoundfileName(soundfileName) {
+				let keyName = soundfileName.charAt(0).toLowerCase();
+				
+				for(let i = 1; i < soundfileName.length; i++) {
+					const nextChar = soundfileName.charAt(i);
+					if(nextChar === "b") {
+						keyName += "es";
+					} else if(!isNaN(nextChar)) {
+						const nextCharNumber = parseInt(nextChar)
+						switch (nextChar) {
+							case "8":
+								keyName += "\\'";
+							case "7":
+								keyName += "\\'";
+							case "6":
+								keyName += "\\'";
+							case "5":
+								keyName += "\\'";
+							break;
+							case "0":
+								keyName += "\\,";
+							case "1":
+								keyName += "\\,";
+							case "2":
+								keyName += "\\,";
+							case "3":
+								keyName += "\\,";
+							break;
+						}
+					} else if(nextChar === "e") {
+						i++;
+						keyName += "es";
+					} else {
+						keyName += nextChar;
+					}
+				}
+				
+				return keyName;
 			}
 			
 			class Expression {
