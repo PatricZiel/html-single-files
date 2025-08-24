@@ -430,46 +430,35 @@
 					const audio = audioElement.cloneNode();
 					audio.playbackRate = Math.pow(2, semitones / 12); // Tonhöhe
 					audio.play();
-		
 					setTimeout(() => {
 						audio.pause();
+						audio.currentTime = 0; // auf Anfang setzen, falls nochmal benutzt
 					}, 240000 / speed / keyInformation.keyDuration * 0.9);
 				}
 			}
 			
-			function writeAllKeys() {				
-				const rightHand = readKeys.split("\\relative {")[1]?.split("}")[0].split(/\r?\n/).map((line) => line.trim());
-				const rightHandKeys = rightHand.filter((line) => !line.startsWith("\\") && line !== "").join(" ");
+			function writeAllKeys() {
+				const blockStarts = readKeys.split("{");
 				
-				extractAndPrintKeyInformation(rightHandKeys.split(" ").filter((key) => key !== "|"));
+				for(let i = 1; i < blockStarts.length; i++) {
+					const expressionString = blockStarts[i].split("}")[0];
+					const relative = blockStarts[i - 1].endsWith("relative ");
+					
+					const expression = new Expression(expressionString, relative);
+					pushAndPrintNotesByExpression(expression);
+				}
 			}
 			
-			function extractAndPrintKeyInformation(keys) {
-				lastOctave = -1;
-				lastKeyIndex = 3;
-				lastKeyDuration = 1;
-				
-				const keyInformations = keys
-					.map((key) => {
-						const keyInformation = new KeyInformation(lastOctave, lastKeyDuration);
-						keyInformation.readKey(key, lastKeyIndex);
-
-						lastOctave = keyInformation.octave;
-						if(keyInformation.keyIndex !== undefined) {
-							lastKeyIndex = keyInformation.keyIndex;
-						}
-						lastKeyDuration = keyInformation.keyDuration;
-						
-						notes.push({
-							keyInformation: keyInformation,
-							startTimeMs: calculateStartTimeInMs(keyInformation),
-							played: false
-						});
-						
-						return keyInformation;
+			function pushAndPrintNotesByExpression(expression) {
+				nextKeyStartTimeMs = firstKeyStartTimeMs;
+				expression.keyInformations.forEach((keyInformation) => {
+					printNote(keyInformation);
+					notes.push({
+						keyInformation: keyInformation,
+						startTimeMs: calculateStartTimeInMs(keyInformation),
+						played: false
 					});
-					
-				keyInformations.forEach((keyInformation) => printNote(keyInformation));
+				});
 			}
 			
 			function calculateStartTimeInMs(keyInformation) {
@@ -519,19 +508,82 @@
 				}
 			}
 			
+			class Expression {
+				keyInformations = [];
+				
+				constructor(expression, relative) {
+					const keys = expression
+						.split(/\r?\n/)
+						.map((line) => line.trim())
+						.filter((line) => !line.startsWith("\\") && line !== "")
+						.join(" ")
+						.split(" ")
+						.filter((key) => key !== "|");
+					
+					let lastKeyDuration = 4;
+					
+					if (relative) {
+						let lastOctave = -1;
+						let lastKeyIndex = 3;
+						
+						keys.forEach((key) => {
+							const keyInformation = new KeyInformation(lastKeyDuration);
+							keyInformation.readKeyRelative(key, lastOctave, lastKeyIndex);
+
+							lastOctave = keyInformation.octave;
+
+							if(keyInformation.keyIndex !== undefined) {
+								lastKeyIndex = keyInformation.keyIndex;
+							}
+							lastKeyDuration = keyInformation.keyDuration;
+							
+							this.keyInformations.push(keyInformation);
+						});
+					} else {
+						keys.forEach((key) => {
+							const keyInformation = new KeyInformation(lastKeyDuration);
+							
+							keyInformation.readKey(key);
+							
+							lastKeyDuration = keyInformation.keyDuration;
+							
+							this.keyInformations.push(keyInformation);
+						});
+					}
+				}
+			}
+			
 			class KeyInformation {
-				octave = 0;
 				gotES = false; // the key becomes minor
 				keyIndex = undefined; // 0 = c, 1 = d, 2 = e, 3 = f, 4 = g, 5 = a, 6 = b
 				keyName = undefined;
 				keyDuration = 1;
+				octave = -1;
 				
-				constructor(octave, keyDuration) {
-					this.octave = octave;
+				constructor(keyDuration) {
 					this.keyDuration = keyDuration;
 				}
 				
-				readKey(key, lastKeyIndex) {
+				readKey(key) {
+					this.#readReversed(key);
+					this.#adjustByOctave();
+				}
+				
+				readKeyRelative(key, octave, lastKeyIndex) {
+					this.octave = octave;
+					
+					this.#readReversed(key);
+					
+					if((this.keyIndex - lastKeyIndex) >= 4) {
+						this.octave--;
+					} else if((lastKeyIndex - this.keyIndex) >= 4) {
+						this.octave++;
+					}
+					
+					this.#adjustByOctave();
+				}
+				
+				#readReversed(key) {
 					const fractionsReversed = key.split("").reverse();
 					let elongated = false;
 					
@@ -574,31 +626,24 @@
 						}
 					}
 					
-					
 					if(elongated) {
 						this.keyDuration /= 1.5;
 					}
 					
-					if((this.keyIndex - lastKeyIndex) >= 4) {
-						this.octave--;
-					} else if((lastKeyIndex - this.keyIndex) >= 4) {
-						this.octave++;
+					if(this.gotES) {
+						this.keyName += "es";
 					}
-					
-					if(this.keyName) {
-						if(this.gotES) {
-							this.keyName += "es";
-						}
-						
-						if(this.octave !== 0) {
-							if(this.octave < 0) {
-								for(let i = 0; i > this.octave; i--) {
-									this.keyName += "\\,";
-								}
-							} else {
-								for(let i = 0; i < this.octave; i++) {
-									this.keyName += "\\'";
-								}
+				}
+				
+				#adjustByOctave() {
+					if(this.keyName && this.octave !== 0) {
+						if(this.octave < 0) {
+							for(let i = 0; i > this.octave; i--) {
+								this.keyName += "\\,";
+							}
+						} else {
+							for(let i = 0; i < this.octave; i++) {
+								this.keyName += "\\'";
 							}
 						}
 					}
