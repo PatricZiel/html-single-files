@@ -438,8 +438,6 @@
 			}
 			
 			function writeAllKeys() {
-				const expressions = [];
-				
 				const blockStarts = readKeys.split("{");
 				
 				for(let i = 1; i < blockStarts.length; i++) {
@@ -448,7 +446,6 @@
 					
 					const expression = new Expression(expressionString, relative);
 					pushAndPrintNotesByExpression(expression);
-					expressions.push(expression);
 				}
 			}
 			
