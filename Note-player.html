@@ -279,6 +279,10 @@
 					<label for="start-dialog-video-checkbox-input" > Video erstellen: </label>
 					<input id="start-dialog-video-checkbox-input" name="start-dialog-video-checkbox-input" type="checkbox" checked >
 				</div>
+				<div>
+					<label for="start-dialog-speed-input" > Geschwindigkeit: </label>
+					<input id="start-dialog-speed-input" name="start-dialog-speed-input" type="number" value="120" >
+				</div>
 				<input id="start-dialog-submit-button" type="submit" value="Abspielen" disabled="true" >
 			</form>
 		</dialog>
@@ -306,6 +310,7 @@
 				const startDialogSoundInput = document.getElementById('start-dialog-sound-file-input');
 				const startDialogSubmitButton = document.getElementById('start-dialog-submit-button');
 				const startDialogVideoCheckbox = document.getElementById("start-dialog-video-checkbox-input");
+				const startDialogSpeedInput = document.getElementById("start-dialog-speed-input");
 				
 				startDialog.showModal();
 				
@@ -320,10 +325,13 @@
 				startDialogForm.addEventListener('submit', async (event) => {
 					const lilyPondFile = startDialogLilyPondFileInput.files[0];
 					if(!lilyPondFile) {
-					  alert("Bitte eine Datei auswählen.");
+					  alert("Bitte eine lilyPond-Datei auswählen.");
 					  event.preventDefault();
 					  return;
 					}
+					
+					speed = parseInt(startDialogSpeedInput.value);
+					pixelsPerMs = 300*speed/(1000*defaultSpeed);
 					
 					readKeys = await lilyPondFile.text();
 					
