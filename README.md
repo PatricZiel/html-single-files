@@ -10,4 +10,5 @@ A self made copy of the game "2048" - popular on mobile phones.
 NotePlayer:
 Since I love playing the piano, I meet some people who like to learn to play the piano themself and therefor I wanted to make this Project to help them learn playing some easy pieces.
 I had some contact to LilyPond a while ago to write my first notes and I decidet to use and understand that format in this application.
+It is yet not possible to read LilyPond-notes correctly - the logic of understanding the text correctly is really complex. 
 This project is evergrowing, won't be finished and will be restartet with object-orientation in Java.
