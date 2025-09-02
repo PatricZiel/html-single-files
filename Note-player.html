@@ -312,9 +312,12 @@
 				const startDialogVideoCheckbox = document.getElementById("start-dialog-video-checkbox-input");
 				const startDialogSpeedInput = document.getElementById("start-dialog-speed-input");
 				
+				let lilyPondFile;
+				
 				startDialog.showModal();
 				
 				startDialogLilyPondFileInput.addEventListener('change', () => {
+					lilyPondFile = startDialogLilyPondFileInput.files[0];
 					if (startDialogLilyPondFileInput.files.length > 0) {
 					  startDialogSubmitButton.disabled = false;
 					} else {
@@ -322,8 +325,28 @@
 					}
 				});
 				
+				startDialogSoundInput.addEventListener('change', () => {
+					const body = document.getElementsByTagName("body")[0];
+					
+					Array.from(startDialogSoundInput.files)
+						.forEach((file) => {
+							if(file.type.startsWith("audio/")) {
+								const audioElement = document.createElement("audio");
+								const keyName = getKeyBySoundfileName( file.name.split(".")[0] );
+								
+								audioElement.id = "audio-" + keyName;
+								audioElement.src = URL.createObjectURL(file);
+								audioElement.preload = "auto";
+								
+								body.appendChild(audioElement);
+							} else if(file.name.endsWith("ly")) {
+								lilyPondFile = file;
+								startDialogSubmitButton.disabled = false;
+							}
+					});
+				});
+				
 				startDialogForm.addEventListener('submit', async (event) => {
-					const lilyPondFile = startDialogLilyPondFileInput.files[0];
 					if(!lilyPondFile) {
 					  alert("Bitte eine lilyPond-Datei auswählen.");
 					  event.preventDefault();
@@ -340,21 +363,6 @@
 					keysHeightOffset = keysParent.getBoundingClientRect().top - noteScreen.getBoundingClientRect().top;
 					
 					writeAllKeys();
-					
-					const soundFiles = startDialogSoundInput.files;
-					if(soundFiles.length > 0) {
-						const body = document.getElementsByTagName("body")[0];
-						Array.from(soundFiles).forEach((soundFile) => {
-							const audioElement = document.createElement("audio");
-							const keyName = getKeyBySoundfileName( soundFile.name.split(".")[0] );
-							
-							audioElement.id = "audio-" + keyName;
-							audioElement.src = URL.createObjectURL(soundFile);
-							audioElement.preload = "auto";
-							
-							body.appendChild(audioElement);
-						});
-					}
 					
 					if(startDialogVideoCheckbox.checked) {
 						const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -418,10 +426,13 @@
 					
 					node.style.top = nodePosition + "px";
 					
-					const pianoKey = document.querySelector("[keyName="+ node.keyInformation.keyName +"]");
-					if(pianoKey.classList.contains("pressed") && elapsed * pixelsPerMs > parseInt(node.style.height)) {
-						pianoKey.classList.remove("pressed");
-						node.remove();
+					try {
+						const pianoKey = document.querySelector(`[keyName="${node.keyInformation.keyName}"]`);
+						if(pianoKey.classList.contains("pressed") && elapsed * pixelsPerMs > parseInt(node.style.height)) {
+							pianoKey.classList.remove("pressed");
+							node.remove();
+						}
+					} catch (exception) {
 					}
 				});
 			}
